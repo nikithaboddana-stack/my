@@ -1,0 +1,269 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Farmer profile information and settings",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique identifier of the farmer matching auth UID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Farmer's full name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Farmer's email address",
+          "maxLength": 150
+        },
+        "location": {
+          "type": "string",
+          "description": "Farm location or region",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string when farmer registered",
+          "maxLength": 50
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp or server timestamp string of last profile update",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "name", "email", "createdAt"]
+    },
+    "Farm": {
+      "title": "Farm",
+      "description": "Farm specification, acreage, soil classification, and irrigation systems",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Farmer owner user ID",
+          "maxLength": 128
+        },
+        "farmName": {
+          "type": "string",
+          "description": "Name or title of the farm plot",
+          "maxLength": 120
+        },
+        "farmArea": {
+          "type": "number",
+          "description": "Total land area in specified units"
+        },
+        "areaUnit": {
+          "type": "string",
+          "description": "Unit of measurement (hectares, acres, m2)",
+          "maxLength": 30
+        },
+        "soilType": {
+          "type": "string",
+          "description": "Primary soil composition (Loam, Clay, Sandy, Silt, Peat, Saline)",
+          "maxLength": 60
+        },
+        "crops": {
+          "type": "string",
+          "description": "Comma-separated list or active crops grown",
+          "maxLength": 250
+        },
+        "irrigationMethod": {
+          "type": "string",
+          "description": "Primary irrigation method (Drip, Sprinkler, Furrow, Flood, Sub-surface)",
+          "maxLength": 60
+        },
+        "waterSource": {
+          "type": "string",
+          "description": "Water source (Borewell/Groundwater, Canal, River, Rainwater Reservoir, Municipal)",
+          "maxLength": 100
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Geographical latitude for weather integration"
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Geographical longitude for weather integration"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "farmName"]
+    },
+    "WaterUsageRecord": {
+      "title": "WaterUsageRecord",
+      "description": "Daily or session-based irrigation water consumption entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Record identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Farmer owner user ID",
+          "maxLength": 128
+        },
+        "crop": {
+          "type": "string",
+          "description": "Crop being irrigated",
+          "maxLength": 100
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of irrigation (YYYY-MM-DD)",
+          "maxLength": 20
+        },
+        "waterUsed": {
+          "type": "number",
+          "description": "Volume of water used in liters"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Measurement unit (Liters, Gallons, Cubic Meters)",
+          "maxLength": 30
+        },
+        "irrigationMethod": {
+          "type": "string",
+          "description": "Technique employed for this session",
+          "maxLength": 60
+        },
+        "durationHours": {
+          "type": "number",
+          "description": "Duration of pump or valve operation in hours"
+        },
+        "areaCovered": {
+          "type": "number",
+          "description": "Area irrigated during this session"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Field observations, weather notes, or pump pressure",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "userId", "crop", "date", "waterUsed", "irrigationMethod", "createdAt"]
+    },
+    "FavoriteItem": {
+      "title": "FavoriteItem",
+      "description": "Saved agronomy guide or water conservation practice",
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "description": "ID of the saved knowledge article or guide",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Farmer user ID",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the saved guide",
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "description": "Knowledge topic category",
+          "maxLength": 80
+        },
+        "savedAt": {
+          "type": "string",
+          "description": "Saved date timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["itemId", "userId", "title", "savedAt"]
+    },
+    "IrrigationSchedule": {
+      "title": "IrrigationSchedule",
+      "description": "Planned irrigation schedule entry for crops",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Schedule unique ID",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Farmer user ID",
+          "maxLength": 128
+        },
+        "crop": {
+          "type": "string",
+          "description": "Target crop",
+          "maxLength": 100
+        },
+        "scheduledDate": {
+          "type": "string",
+          "description": "Scheduled date (YYYY-MM-DD)",
+          "maxLength": 20
+        },
+        "scheduledTime": {
+          "type": "string",
+          "description": "Scheduled start time (e.g. 06:00 AM)",
+          "maxLength": 30
+        },
+        "plannedWater": {
+          "type": "number",
+          "description": "Target water volume in liters"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status: pending, completed, skipped_weather, cancelled",
+          "maxLength": 40
+        },
+        "weatherAlert": {
+          "type": "string",
+          "description": "Live weather advisory or rain pause suggestion",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "userId", "crop", "scheduledDate", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Farmer profile and account details"
+    },
+    "/farms/{userId}": {
+      "schema": "Farm",
+      "description": "Farm characteristics, crop portfolio, and irrigation hardware"
+    },
+    "/waterUsage/{userId}/records/{recordId}": {
+      "schema": "WaterUsageRecord",
+      "description": "Historical records and live stream of water applications"
+    },
+    "/favorites/{userId}/items/{itemId}": {
+      "schema": "FavoriteItem",
+      "description": "Bookmarked water conservation techniques and agronomic advice"
+    },
+    "/irrigationSchedules/{userId}/schedules/{scheduleId}": {
+      "schema": "IrrigationSchedule",
+      "description": "Scheduled irrigation events and automated weather adjustments"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "AgriFlow - Farm Water Management",
+  "description": "Comprehensive farm water conservation, irrigation scheduling, crop knowledge, live weather advisories, and real-time AI agronomy assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

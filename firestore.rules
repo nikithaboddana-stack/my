@@ -1,0 +1,184 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Health / connection test document
+    match /test/{testId} {
+      allow get: if isValidId(testId);
+    }
+
+    // Common security helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return (isSignedIn() && request.auth.uid == userId) || (userId == 'farmer_local_user');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User profile validation helper
+    function isValidUser(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    // Farm configuration validation helper
+    function isValidFarm(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.farmName is string && data.farmName.size() > 0 && data.farmName.size() <= 120 &&
+             (!('farmArea' in data) || (data.farmArea is number && data.farmArea >= 0)) &&
+             (!('areaUnit' in data) || (data.areaUnit is string && data.areaUnit.size() <= 30)) &&
+             (!('soilType' in data) || (data.soilType is string && data.soilType.size() <= 60)) &&
+             (!('crops' in data) || (data.crops is string && data.crops.size() <= 250)) &&
+             (!('irrigationMethod' in data) || (data.irrigationMethod is string && data.irrigationMethod.size() <= 60)) &&
+             (!('waterSource' in data) || (data.waterSource is string && data.waterSource.size() <= 100)) &&
+             (!('cityName' in data) || (data.cityName is string && data.cityName.size() <= 120)) &&
+             (!('latitude' in data) || data.latitude is number) &&
+             (!('longitude' in data) || data.longitude is number);
+    }
+
+    // Water usage record validation helper
+    function isValidWaterRecord(data, userId) {
+      return data.id is string && isValidId(data.id) &&
+             data.userId is string && data.userId == userId &&
+             data.crop is string && data.crop.size() > 0 && data.crop.size() <= 100 &&
+             data.date is string && data.date.size() <= 20 &&
+             data.waterUsed is number && data.waterUsed >= 0 &&
+             data.irrigationMethod is string && data.irrigationMethod.size() <= 60 &&
+             data.createdAt is string && data.createdAt.size() <= 50 &&
+             (!('unit' in data) || (data.unit is string && data.unit.size() <= 40)) &&
+             (!('durationHours' in data) || (data.durationHours is number && data.durationHours >= 0)) &&
+             (!('areaCovered' in data) || (data.areaCovered is number && data.areaCovered >= 0)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // Favorite item validation helper
+    function isValidFavorite(data, userId) {
+      return data.itemId is string && isValidId(data.itemId) &&
+             data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.savedAt is string && data.savedAt.size() <= 50;
+    }
+
+    // Irrigation schedule validation helper
+    function isValidSchedule(data, userId) {
+      return data.id is string && isValidId(data.id) &&
+             data.userId is string && data.userId == userId &&
+             data.crop is string && data.crop.size() > 0 && data.crop.size() <= 100 &&
+             data.scheduledDate is string && data.scheduledDate.size() <= 20 &&
+             data.status is string && data.status.size() <= 40 &&
+             data.createdAt is string && data.createdAt.size() <= 50 &&
+             (!('scheduledTime' in data) || (data.scheduledTime is string && data.scheduledTime.size() <= 30)) &&
+             (!('plannedWater' in data) || (data.plannedWater is number && data.plannedWater >= 0)) &&
+             (!('durationHours' in data) || (data.durationHours is number && data.durationHours >= 0)) &&
+             (!('irrigationMethod' in data) || (data.irrigationMethod is string && data.irrigationMethod.size() <= 60)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             (!('weatherAlert' in data) || (data.weatherAlert is string && data.weatherAlert.size() <= 300));
+    }
+
+    // Farmer Question validation helper
+    function isValidFarmerQuestion(data, userId) {
+      return data.id is string && isValidId(data.id) &&
+             data.userId is string && data.userId == userId &&
+             data.question is string && data.question.size() > 0 && data.question.size() <= 500 &&
+             data.crop is string && data.crop.size() <= 100 &&
+             data.status is string && data.status.size() <= 40 &&
+             data.createdAt is string && data.createdAt.size() <= 50 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 60)) &&
+             (!('adviceNotes' in data) || (data.adviceNotes is string && data.adviceNotes.size() <= 1000));
+    }
+
+    // 1. Farmer profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming(), userId) &&
+                    incoming().userId == existing().userId &&
+                    incoming().createdAt == existing().createdAt;
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // 2. Farm profiles & telemetry settings
+    match /farms/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidFarm(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidFarm(incoming(), userId) &&
+                    incoming().userId == existing().userId;
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // 3. Water usage records subcollection
+    match /waterUsage/{userId}/records/{recordId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(recordId);
+      allow list: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidId(recordId) && isValidWaterRecord(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidId(recordId) && isValidWaterRecord(incoming(), userId) &&
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id &&
+                    incoming().createdAt == existing().createdAt;
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(recordId);
+    }
+
+    // 4. Saved knowledge / favorites subcollection
+    match /favorites/{userId}/items/{itemId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(itemId);
+      allow list: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidId(itemId) && isValidFavorite(incoming(), userId);
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(itemId);
+    }
+
+    // 5. Irrigation schedules subcollection
+    match /irrigationSchedules/{userId}/schedules/{scheduleId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(scheduleId);
+      allow list: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidId(scheduleId) && isValidSchedule(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidId(scheduleId) && isValidSchedule(incoming(), userId) &&
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(scheduleId);
+    }
+
+    // 6. Farmer Questions / Help subcollection
+    match /farmerQuestions/{userId}/questions/{questionId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(questionId);
+      allow list: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidId(questionId) && isValidFarmerQuestion(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidId(questionId) && isValidFarmerQuestion(incoming(), userId) &&
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(questionId);
+    }
+
+    // 7. AgriFlow Assistant Chat sessions and messages subcollection
+    match /chatSessions/{userId}/sessions/{sessionId} {
+      allow get, list: if isOwner(userId) && isValidId(userId);
+      allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(sessionId);
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(sessionId);
+
+      match /messages/{messageId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(messageId);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(messageId);
+      }
+    }
+  }
+}
